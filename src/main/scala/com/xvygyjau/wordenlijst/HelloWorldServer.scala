@@ -16,7 +16,7 @@ object ServerStream {
 
   def helloWorldService[F[_]: Effect] = new HelloWorldService[F].service
 
-  val port = scala.util.Properties.envOrNone("PORT").map(_.toInt).getOrElse(8080)
+  val port = sys.env.getOrElse("PORT", "8080").toInt
 
   def stream[F[_]: Effect](implicit ec: ExecutionContext) =
     BlazeBuilder[F]
