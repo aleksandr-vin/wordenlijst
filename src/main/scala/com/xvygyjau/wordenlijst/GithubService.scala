@@ -6,16 +6,16 @@ import io.circe.Json
 import org.http4s.HttpService
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import org.pico.hashids.Hashids
 
 import scala.util.{Failure, Success, Try}
 
-class GithubService[F[_]: Effect] extends Http4sDsl[F] {
+class GithubService[F[_]: Effect](implicit hashids: Hashids) extends Http4sDsl[F] {
 
   val service: HttpService[F] = {
     HttpService[F] {
       case GET -> Root / "token" / token =>
         Try {
-          import Ids.hashids
           val accessToken = github.AccessToken(token)
           AccessToken.encode(accessToken)
         } match {

@@ -14,6 +14,8 @@ object WorldenlijstServer extends StreamApp[IO] {
 
 object ServerStream {
 
+  import Ids.hashids
+
   def githubService[F[_]: Effect] = new GithubService[F].service
 
   val port = sys.env.getOrElse("PORT", "8080").toInt
