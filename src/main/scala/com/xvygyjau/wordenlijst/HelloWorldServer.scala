@@ -16,9 +16,11 @@ object ServerStream {
 
   def helloWorldService[F[_]: Effect] = new HelloWorldService[F].service
 
+  val port = scala.util.Properties.envOrNone("PORT").map(_.toInt).getOrElse(8080)
+
   def stream[F[_]: Effect](implicit ec: ExecutionContext) =
     BlazeBuilder[F]
-      .bindHttp(8080, "0.0.0.0")
+      .bindHttp(port, "0.0.0.0")
       .mountService(helloWorldService, "/")
       .serve
 }
