@@ -5,25 +5,25 @@ import org.http4s._
 import org.http4s.implicits._
 import org.specs2.matcher.MatchResult
 
-class HelloWorldSpec extends org.specs2.mutable.Specification {
+class GithubServiceSpec extends org.specs2.mutable.Specification {
 
-  "HelloWorld" >> {
+  "GithubService" >> {
     "return 200" >> {
       uriReturns200()
     }
-    "return hello world" >> {
-      uriReturnsHelloWorld()
+    "return api key" >> {
+      uriReturnsApiKey()
     }
   }
 
   private[this] val retHelloWorld: Response[IO] = {
-    val getHW = Request[IO](Method.GET, Uri.uri("/hello/world"))
-    new HelloWorldService[IO].service.orNotFound(getHW).unsafeRunSync()
+    val getHW = Request[IO](Method.GET, Uri.uri("/token/cb213d0c3c98e33730862234d414c040d1c188df"))
+    new GithubService[IO].service.orNotFound(getHW).unsafeRunSync()
   }
 
   private[this] def uriReturns200(): MatchResult[Status] =
     retHelloWorld.status must beEqualTo(Status.Ok)
 
-  private[this] def uriReturnsHelloWorld(): MatchResult[String] =
-    retHelloWorld.as[String].unsafeRunSync() must beEqualTo("{\"message\":\"Hello, world\"}")
+  private[this] def uriReturnsApiKey(): MatchResult[String] =
+    retHelloWorld.as[String].unsafeRunSync() must beEqualTo("{\"message\":\"Hello, unknown Github user, your api key is xxx\"}")
 }
