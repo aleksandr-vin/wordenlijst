@@ -1,3 +1,5 @@
+import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoOptions
+
 val Http4sVersion = "0.18.21"
 val Specs2Version = "4.1.0"
 val LogbackVersion = "1.2.3"
@@ -20,15 +22,25 @@ lazy val root = (project in file("."))
       "io.circe" %% "circe-generic" % CirceVersion,
       "io.circe" %% "circe-literal" % CirceVersion
     ),
-
     resolvers += Resolver.bintrayRepo("aleksandrvin", "maven"),
     libraryDependencies ++= Seq(
-      "org.picoworks" %% "pico-hashids"  % "4.4.145-5e94364"
+      "org.picoworks" %% "pico-hashids" % "4.4.145-5e94364"
     ),
-
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
-    scalacOptions ++= Seq("-Ypartial-unification")
+    scalacOptions ++= Seq("-Ypartial-unification"),
+    buildInfoPackage := "com.xvygyjau.wordenlijst",
+    buildInfoKeys := Seq[BuildInfoKey](
+      name,
+      version,
+      scalaVersion,
+      sbtVersion,
+      resolvers,
+      libraryDependencies
+    ),
+    buildInfoOptions += BuildInfoOption.BuildTime,
+    buildInfoOptions += BuildInfoOption.ToJson
   )
   .enablePlugins(GitVersioning)
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(BuildInfoPlugin)
