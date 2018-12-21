@@ -23,8 +23,8 @@ class GithubService(implicit hashids: Hashids)
 
   case class ApiKeyResponse(apiKey: Option[String], message: String)
 
-  implicit val apiKeyEncoder: Encoder[ApiKeyResponse] = deriveEncoder
-  implicit val apiKeyEntityEncoder: EntityEncoder[IO, ApiKeyResponse] =
+  implicit val apiKeyResponseEncoder: Encoder[ApiKeyResponse] = deriveEncoder
+  implicit val apiKeyResponseEntityEncoder: EntityEncoder[IO, ApiKeyResponse] =
     jsonEncoderOf[IO, ApiKeyResponse]
 
   def getApiKey(accessToken: github.AccessToken): IO[ApiKeyResponse] = IO {
