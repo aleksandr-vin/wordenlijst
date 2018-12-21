@@ -20,7 +20,7 @@ class GithubServiceSpec extends org.specs2.mutable.Specification {
   private[this] val retHelloWorld: Response[IO] = {
     implicit val hashids: Hashids = Hashids.reference("test")
     val getHW = Request[IO](Method.GET, Uri.uri("/token/cb213d0c3c98e33730862234d414c040d1c188df"))
-    new GithubService[IO].service.orNotFound(getHW).unsafeRunSync()
+    new GithubService().service.orNotFound(getHW).unsafeRunSync()
   }
 
   private[this] def uriReturns200(): MatchResult[Status] =

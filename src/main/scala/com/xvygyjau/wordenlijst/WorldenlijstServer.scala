@@ -9,19 +9,19 @@ import scala.concurrent.ExecutionContext
 object WorldenlijstServer extends StreamApp[IO] {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def stream(args: List[String], requestShutdown: IO[Unit]) = ServerStream.stream[IO]
+  def stream(args: List[String], requestShutdown: IO[Unit]) = ServerStream.stream
 }
 
 object ServerStream {
 
   import Ids.hashids
 
-  def githubService[F[_]: Effect] = new GithubService[F].service
+  def githubService = new GithubService().service
 
   val port = sys.env.getOrElse("PORT", "8080").toInt
 
-  def stream[F[_]: Effect](implicit ec: ExecutionContext) =
-    BlazeBuilder[F]
+  def stream(implicit ec: ExecutionContext) =
+    BlazeBuilder[IO]
       .bindHttp(port, "0.0.0.0")
       .mountService(githubService, "/github/")
       .serve

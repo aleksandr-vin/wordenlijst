@@ -1,34 +1,55 @@
 package com.xvygyjau.wordenlijst
 
-import cats.effect.Effect
+import cats.Eval
+import cats.effect.IO
+import com.typesafe.scalalogging.LazyLogging
 import com.xvygyjau.wordenlijst.github.AccessToken
-import io.circe.Json
-import org.http4s.HttpService
+import github4s.Github
+import github4s.Github._
+import github4s.GithubResponses.{GHIO, GHResponse, GHResult}
+import github4s.free.domain.User
+import github4s.jvm.Implicits._
+import io.circe.Encoder
+import io.circe.generic.semiauto._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import org.http4s.{EntityEncoder, HttpService}
 import org.pico.hashids.Hashids
+import scalaj.http.HttpResponse
 
-import scala.util.{Failure, Success, Try}
+class GithubService(implicit hashids: Hashids)
+    extends Http4sDsl[IO]
+    with LazyLogging {
 
-class GithubService[F[_]: Effect](implicit hashids: Hashids) extends Http4sDsl[F] {
+  case class ApiKeyResponse(apiKey: Option[String], message: String)
 
-  val service: HttpService[F] = {
-    HttpService[F] {
+  implicit val apiKeyEncoder: Encoder[ApiKeyResponse] = deriveEncoder
+  implicit val apiKeyEntityEncoder: EntityEncoder[IO, ApiKeyResponse] =
+    jsonEncoderOf[IO, ApiKeyResponse]
+
+  def getApiKey(accessToken: github.AccessToken): IO[ApiKeyResponse] = IO {
+
+    val user: GHIO[GHResponse[User]] = Github(Some(accessToken.value)).users.getAuth
+
+    val u1: GHResponse[User] = user.exec[Eval, HttpResponse[String]]().value
+    u1 match {
+      case Right(GHResult(result, status, headers)) =>
+        logger.info(s"Github user: ${result.login}")
+        val hash = AccessToken.encode(accessToken)
+        ApiKeyResponse(Some(hash), s"Welcome, ${result.login}, your api key is $hash")
+      case Left(e) =>
+        logger.error(s"Github error: ${e.getMessage}")
+        ApiKeyResponse(None, e.getMessage)
+    }
+  }
+
+  val service: HttpService[IO] = {
+    HttpService[IO] {
       case GET -> Root / "token" / token =>
-        Try {
-          val accessToken = github.AccessToken(token)
-          AccessToken.encode(accessToken)
-        } match {
-          case Success(apiKey) =>
-            Ok(
-              Json.obj(
-                "message" -> Json.fromString(
-                  s"Hello, unknown Github user, your api key is $apiKey"),
-                "apiKey" -> Json.fromString(apiKey)))
-          case Failure(exception) =>
-            InternalServerError(Json.obj(
-              "message" -> Json.fromString(exception.getMessage)))
-        }
+        for {
+          apiKey <- getApiKey(github.AccessToken(token))
+          result <- Ok(apiKey)
+        } yield result
     }
   }
 }
