@@ -32,7 +32,8 @@ class GithubService(implicit hashids: Hashids)
       u1 <- IO.eval(userRequest.exec[Eval, HttpResponse[String]]())
       apiKeyResponse = u1 match {
         case Right(GHResult(user, status, headers)) =>
-          logger.info(s"Github user: $user, status: $status, headers: $headers")
+          logger.info(s"Github user: ${user.login}")
+          logger.debug(s"Github response status: $status, user: $user, headers: $headers")
           val hash = AccessToken.encode(accessToken)
           val userName = user.name.getOrElse(user.login)
           ApiKeyResponse(Some(hash), s"Welcome $userName, your api key is $hash")
