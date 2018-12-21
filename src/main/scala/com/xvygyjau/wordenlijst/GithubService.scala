@@ -6,8 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import com.xvygyjau.wordenlijst.github.AccessToken
 import github4s.Github
 import github4s.Github._
-import github4s.GithubResponses.{GHIO, GHResponse, GHResult}
-import github4s.free.domain.User
+import github4s.GithubResponses.{GHException, GHResult}
 import github4s.jvm.Implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
@@ -27,20 +26,21 @@ class GithubService(implicit hashids: Hashids)
   implicit val apiKeyResponseEntityEncoder: EntityEncoder[IO, ApiKeyResponse] =
     jsonEncoderOf[IO, ApiKeyResponse]
 
-  def getApiKey(accessToken: github.AccessToken): IO[ApiKeyResponse] = IO {
-
-    val user: GHIO[GHResponse[User]] = Github(Some(accessToken.value)).users.getAuth
-
-    val u1: GHResponse[User] = user.exec[Eval, HttpResponse[String]]().value
-    u1 match {
-      case Right(GHResult(result, status, headers)) =>
-        logger.info(s"Github user: ${result.login}")
-        val hash = AccessToken.encode(accessToken)
-        ApiKeyResponse(Some(hash), s"Welcome, ${result.login}, your api key is $hash")
-      case Left(e) =>
-        logger.error(s"Github error: ${e.getMessage}")
-        ApiKeyResponse(None, e.getMessage)
-    }
+  def getApiKey(accessToken: github.AccessToken): IO[ApiKeyResponse] = {
+    val userRequest = Github(Some(accessToken.value)).users.getAuth
+    for {
+      u1 <- IO.eval(userRequest.exec[Eval, HttpResponse[String]]())
+      apiKeyResponse = u1 match {
+        case Right(GHResult(user, status, headers)) =>
+          logger.info(s"Github user: $user, status: $status, headers: $headers")
+          val hash = AccessToken.encode(accessToken)
+          val userName = user.name.getOrElse(user.login)
+          ApiKeyResponse(Some(hash), s"Welcome $userName, your api key is $hash")
+        case Left(e: GHException) =>
+          logger.error(s"Github error: ${e.getMessage}")
+          ApiKeyResponse(None, e.getMessage)
+      }
+    } yield apiKeyResponse
   }
 
   val service: HttpService[IO] = {
