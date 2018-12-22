@@ -1,6 +1,6 @@
 package com.xvygyjau.wordenlijst
 
-import cats.effect.{Effect, IO}
+import cats.effect.IO
 import fs2.StreamApp
 import org.http4s.server.blaze.BlazeBuilder
 
@@ -16,8 +16,10 @@ object ServerStream {
 
   import Ids.hashids
 
+  val auth = new CookieAuth()
+
   def githubService = new GithubService().service
-  def wordsService = new WordsService().service
+  def wordsService = new WordsService(auth).service
   def healthService = new HealthService().service
 
   val port = sys.env.getOrElse("PORT", "8080").toInt
