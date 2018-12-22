@@ -17,7 +17,7 @@ object ServerStream {
   import Ids.hashids
 
   def githubService = new GithubService().service
-
+  def wordsService = new WordsService().service
   def healthService = new HealthService().service
 
   val port = sys.env.getOrElse("PORT", "8080").toInt
@@ -26,6 +26,7 @@ object ServerStream {
     BlazeBuilder[IO]
       .bindHttp(port, "0.0.0.0")
       .mountService(githubService, "/github")
+      .mountService(wordsService, "/words")
       .mountService(healthService, "/health")
       .serve
 }
