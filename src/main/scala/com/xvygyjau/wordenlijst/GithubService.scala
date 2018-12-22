@@ -12,7 +12,7 @@ import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityEncoder, HttpService}
+import org.http4s.{Cookie, EntityEncoder, HttpService}
 import org.pico.hashids.Hashids
 import scalaj.http.HttpResponse
 
@@ -33,10 +33,12 @@ class GithubService(implicit hashids: Hashids)
       apiKeyResponse = u1 match {
         case Right(GHResult(user, status, headers)) =>
           logger.info(s"Github user: ${user.login}")
-          logger.debug(s"Github response status: $status, user: $user, headers: $headers")
+          logger.debug(
+            s"Github response status: $status, user: $user, headers: $headers")
           val hash = AccessToken.encode(accessToken)
           val userName = user.name.getOrElse(user.login)
-          ApiKeyResponse(Some(hash), s"Welcome $userName, your api key is $hash")
+          ApiKeyResponse(Some(hash),
+                         s"Welcome $userName, your api key is $hash")
         case Left(e: GHException) =>
           logger.error(s"Github error: ${e.getMessage}")
           ApiKeyResponse(None, e.getMessage)
@@ -44,13 +46,29 @@ class GithubService(implicit hashids: Hashids)
     } yield apiKeyResponse
   }
 
+  object HttpOnlyQueryParamMatcher
+    extends OptionalQueryParamDecoderMatcher[Boolean]("httpOnly")
+
+  object SecureQueryParamMatcher
+    extends OptionalQueryParamDecoderMatcher[Boolean]("secure")
+
   val service: HttpService[IO] = {
     HttpService[IO] {
-      case GET -> Root / "token" / token =>
+      case GET -> Root / "token" / token :? HttpOnlyQueryParamMatcher(httpOnly) +& SecureQueryParamMatcher(secure) =>
         for {
-          apiKey <- getApiKey(github.AccessToken(token))
-          result <- Ok(apiKey)
-        } yield result
+          response <- getApiKey(github.AccessToken(token))
+          result <- Ok(response)
+        } yield
+          response.apiKey.fold({
+            result.removeCookie("apiKey")
+          }) { apiKey =>
+            result.addCookie(
+              Cookie("apiKey",
+                     apiKey,
+                     path = Some("/"),
+                     httpOnly = httpOnly.getOrElse(true),
+                     secure = secure.getOrElse(true)))
+          }
     }
   }
 }
