@@ -42,7 +42,7 @@ class WordsService(auth: Auth) extends Http4sDsl[IO] with LazyLogging {
               logger.info(s"Updatd Github gist ${result.url}")
               logger.debug(
                 s"Github response status: $status, result: $result, headers: $headers")
-              IO.pure(Right(AddPhraseResponse(Some(phrase), s"Gist ${result.url} updated with new phrase")))
+              IO.pure(Right(AddPhraseResponse(Some(phrase), s"New phrase added to gist ${result.url}")))
             case Left(e: GHException) =>
               logger.error(s"Github error: ${e.getMessage}")
               IO.pure(Left(FailureResponse(e.getMessage)))
