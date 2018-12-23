@@ -32,14 +32,18 @@ class CookieAuth(implicit hashids: Hashids) extends Auth with Http4sDsl[IO] {
           header <- headers.Cookie
             .from(request.headers)
             .toRight("Cookie not found or it was a parsing error")
-          cookie <- header.values.toList
+          apiKeyCookie <- header.values.toList
             .find(_.name == "apiKey")
             .toRight("Couldn't find the apiKey in cookie")
-          hash = cookie.content
+          apiKey = apiKeyCookie.content
           accessToken <- Either
-            .catchOnly[IllegalArgumentException](AccessToken.decode(hash))
+            .catchOnly[IllegalArgumentException](AccessToken.decode(apiKey))
             .leftMap(_ => "Couldn't decode access token")
-        } yield User(accessToken)).leftMap(ForiddenResponse.apply)
+          gistIdCookie <- header.values.toList
+            .find(_.name == "gistId")
+            .toRight("Couldn't find the gistId in cookie")
+          gistId = gistIdCookie.content
+        } yield User(accessToken, gistId)).leftMap(ForiddenResponse.apply)
       )
     })
 
@@ -50,7 +54,7 @@ class CookieAuth(implicit hashids: Hashids) extends Auth with Http4sDsl[IO] {
 }
 
 object Auth {
-  case class User(accessToken: github.AccessToken)
+  case class User(accessToken: github.AccessToken, gistId: String)
 
   case class ForiddenResponse(message: String)
 }

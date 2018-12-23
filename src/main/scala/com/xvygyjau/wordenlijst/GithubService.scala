@@ -7,6 +7,7 @@ import com.xvygyjau.wordenlijst.github.AccessToken
 import github4s.Github
 import github4s.Github._
 import github4s.GithubResponses.{GHException, GHResult}
+import github4s.free.domain.GistFile
 import github4s.jvm.Implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
@@ -20,55 +21,91 @@ class GithubService(implicit hashids: Hashids)
     extends Http4sDsl[IO]
     with LazyLogging {
 
-  case class ApiKeyResponse(apiKey: Option[String], message: String)
+  case class TokenResponse(apiKey: String, gistId: String, message: String)
+  case class Failure(message: String)
 
-  implicit val apiKeyResponseEncoder: Encoder[ApiKeyResponse] = deriveEncoder
-  implicit val apiKeyResponseEntityEncoder: EntityEncoder[IO, ApiKeyResponse] =
-    jsonEncoderOf[IO, ApiKeyResponse]
+  type Resp = Either[Failure, TokenResponse]
 
-  def getApiKey(accessToken: github.AccessToken): IO[ApiKeyResponse] = {
+  def getApiKey(accessToken: github.AccessToken, privateGist: Option[Boolean], gistDescription: Option[String]): IO[Resp] = {
     val userRequest = Github(Some(accessToken.value)).users.getAuth
-    for {
-      u1 <- IO.eval(userRequest.exec[Eval, HttpResponse[String]]())
-      apiKeyResponse = u1 match {
-        case Right(GHResult(user, status, headers)) =>
-          logger.info(s"Github user: ${user.login}")
-          logger.debug(
-            s"Github response status: $status, user: $user, headers: $headers")
-          val hash = AccessToken.encode(accessToken)
-          val userName = user.name.getOrElse(user.login)
-          ApiKeyResponse(Some(hash),
-                         s"Welcome $userName, your api key is $hash")
-        case Left(e: GHException) =>
-          logger.error(s"Github error: ${e.getMessage}")
-          ApiKeyResponse(None, e.getMessage)
-      }
-    } yield apiKeyResponse
+    val files = Map(
+      "wordenlijst" -> GistFile("+++")
+    )
+    val newGist = Github(Some(accessToken.value)).gists
+      .newGist(gistDescription.getOrElse("Wordenlijst"), public = !privateGist.getOrElse(false), files)
+
+    IO.eval(userRequest.exec[Eval, HttpResponse[String]]()).flatMap {
+      case Right(GHResult(result, status, headers)) =>
+        logger.info(s"Github user ${result.login}")
+        logger.debug(
+          s"Github response status: $status, result: $result, headers: $headers")
+        val apiKey = AccessToken.encode(accessToken)
+        val userName = result.name.getOrElse(result.login)
+        IO.eval(newGist.exec[Eval, HttpResponse[String]]()).flatMap {
+          case Right(GHResult(result, status, headers)) =>
+            logger.info(s"New Github gist ${result.url}")
+            logger.debug(
+              s"Github response status: $status, result: $result, headers: $headers")
+            IO.pure(Right(TokenResponse(
+              apiKey,
+              result.id,
+              s"Welcome $userName, your api key is $apiKey, and gist is ${result.url}")))
+          case Left(e: GHException) =>
+            logger.error(s"Github error: ${e.getMessage}")
+            IO.pure(Left(Failure(e.getMessage)))
+        }
+      case Left(e: GHException) =>
+        logger.error(s"Github error: ${e.getMessage}")
+        IO.pure(Left(Failure(e.getMessage)))
+    }
   }
 
+  implicit val tokenResponseEncoder: Encoder[TokenResponse] = deriveEncoder
+  implicit val tokenResponseEntityEncoder: EntityEncoder[IO, TokenResponse] =
+    jsonEncoderOf[IO, TokenResponse]
+
+  implicit val failureResponseEncoder: Encoder[Failure] = deriveEncoder
+  implicit val failureResponseEntityEncoder: EntityEncoder[IO, Failure] =
+    jsonEncoderOf[IO, Failure]
+
   object HttpOnlyQueryParamMatcher
-    extends OptionalQueryParamDecoderMatcher[Boolean]("httpOnly")
+      extends OptionalQueryParamDecoderMatcher[Boolean]("httpOnly")
 
   object SecureQueryParamMatcher
-    extends OptionalQueryParamDecoderMatcher[Boolean]("secure")
+      extends OptionalQueryParamDecoderMatcher[Boolean]("secure")
+
+  object PrivateGistQueryParamMatcher
+      extends OptionalQueryParamDecoderMatcher[Boolean]("privateGist")
+
+  object gistDescriptionQueryParamMatcher
+      extends OptionalQueryParamDecoderMatcher[String]("gistDescription")
 
   val service: HttpService[IO] = {
     HttpService[IO] {
-      case GET -> Root / "token" / token :? HttpOnlyQueryParamMatcher(httpOnly) +& SecureQueryParamMatcher(secure) =>
+      case GET -> Root / "token" / token :? HttpOnlyQueryParamMatcher(httpOnly) +& SecureQueryParamMatcher(
+            secure) +& PrivateGistQueryParamMatcher(privateGist) +& gistDescriptionQueryParamMatcher(
+            gistDescription) =>
         for {
-          response <- getApiKey(github.AccessToken(token))
-          result <- Ok(response)
-        } yield
-          response.apiKey.fold({
-            result.removeCookie("apiKey")
-          }) { apiKey =>
-            result.addCookie(
-              Cookie("apiKey",
-                     apiKey,
-                     path = Some("/"),
-                     httpOnly = httpOnly.getOrElse(true),
-                     secure = secure.getOrElse(true)))
+          response <- getApiKey(github.AccessToken(token), privateGist, gistDescription)
+          x <- response match {
+            case Left(r) =>
+              Ok(r).removeCookie("apiKey").removeCookie("gistId")
+            case Right(r) =>
+              Ok(r)
+                .addCookie(
+                  Cookie("apiKey",
+                         r.apiKey,
+                         path = Some("/"),
+                         httpOnly = httpOnly.getOrElse(true),
+                         secure = secure.getOrElse(true)))
+                .addCookie(
+                  Cookie("gistId",
+                         r.gistId,
+                         path = Some("/"),
+                         httpOnly = httpOnly.getOrElse(true),
+                         secure = secure.getOrElse(true)))
           }
+        } yield x
     }
   }
 }
