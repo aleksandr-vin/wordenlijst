@@ -1,1 +1,69 @@
-# wordenlijst
+# Wordenlijst
+
+_Save words to your Gist easily._
+
+## WTF?
+
+This service provides an interface to collect *words* in one HTTP call.
+
+It'll support your journey in extending your vocabulary while doing everyday business at your
+computer. You'll be able to save *new words* in one place -- your Github Gist -- with only
+a pair of keystrokes.
+
+## Setup
+
+The service is running on free Heroku plan [wordenlijst.herokuapp.com](https://wordenlijst.herokuapp.com/health),
+there are no GUI, nor persistence there: everything you need is saved in your Github Gist.
+
+To start, you'll need an Github API key. Go to _Settings / Developer settings / Personal
+access tokens_ and choose _Generate new token_. Add _Token description_ and select **gist**
+scope only. Then copy generated access token.
+
+Open **Terminal** and type in the command below, replacing `YOUR-GITHUB-TOKEN` with your
+token at then end: 
+
+```sh
+curl --cookie-jar ~/.wordenlijst-cookies https://wordenlijst.herokuapp.com/github/token/YOUR-GITHUB-TOKEN
+```
+
+This will create a new Gist named `wordenlijst` in your Gists, and store api key and gist id in _~/.wordenlijst-cookies_
+cookie file. You'd see smth. like this in reply:
+
+```json
+{"apiKey":"2zjAT7ypDBb9...........7S6GMZwV6B2","gistId":"8e7d0f51a7bfa248be9bc35bc82ef282",
+ "message":"Welcome Aleksandr Vinokurov, your api key is 2zjAT7ypDBb9...........7S6GMZwV6B2,\
+ and gist is https://api.github.com/gists/8e7d0f51a7bfa248be9bc35bc82ef282"}
+```
+
+In case of an error, please check:
+
+| Failure message                                                                                                                                          | Possible reason                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| "Failed invoking with status : 404 body : \n {\"message\":\"Not Found\",\"documentation_url\":\"https://developer.github.com/v3/gists/#create-a-gist\"}" | Probably you've forgot to opt **gist** scope for the token.                        |
+| "Failed invoking with status : 401 body : \n {\"message\":\"Bad credentials\",\"documentation_url\":\"https://developer.github.com/v3\"}"                | Check that you didn't forget to copy all the characters of your token to the call. |
+
+## Saving the word
+
+Now you can save **words** with this HTTP call:
+
+```sh
+curl --cookie-jar ~/.wordenlijst-cookies --cookie ~/.wordenlijst-cookies -X POST https://wordenlijst.herokuapp.com/words?phrase=WORD
+```
+
+Like this:
+
+```sh
+curl --cookie-jar ~/.wordenlijst-cookies --cookie ~/.wordenlijst-cookies -X POST https://wordenlijst.herokuapp.com/words?phrase=ubiquitous
+```
+
+Or this:
+
+```sh
+curl --cookie-jar ~/.wordenlijst-cookies --cookie ~/.wordenlijst-cookies -X POST https://wordenlijst.herokuapp.com/words --get --data-urlencode "phrase=Elf verbeterpunten"
+```
+
+With kinda this reply:
+
+```json
+{"phrase":{"value":"Elf verbeterpunten"},"message":"New phrase added to gist https://api.github.com/gists/cbe9defa032013cdf8a043aa7c72e60f"}
+```
