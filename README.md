@@ -67,3 +67,12 @@ With kinda this reply:
 ```json
 {"phrase":{"value":"Elf verbeterpunten"},"message":"New phrase added to gist https://api.github.com/gists/cbe9defa032013cdf8a043aa7c72e60f"}
 ```
+
+## Automating
+
+### MacOS
+
+Install (by openning) _Save to Wordenlijst.workflow_ quick action. Then assign a shortcut to _Save to Wordenlijst_
+action in _System Preferences > Keyboard > Shortcuts > Services_ > Text_ services. Now open Safari and go for the
+unknown: search for new **word**, select it and hit your shortcut, if you did everything right, you should see a coq
+rolling on the Menu Bar and then a notification message _Saving new phrase_ from **Wordenlijst**. Congrats!
