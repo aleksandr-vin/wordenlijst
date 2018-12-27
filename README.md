@@ -72,7 +72,14 @@ With kinda this reply:
 
 ### MacOS
 
-Install (by openning) _Save to Wordenlijst.workflow_ quick action. Then assign a shortcut to _Save to Wordenlijst_
-action in _System Preferences > Keyboard > Shortcuts > Services_ > Text_ services. Now open Safari and go for the
-unknown: search for new **word**, select it and hit your shortcut, if you did everything right, you should see a coq
-rolling on the Menu Bar and then a notification message _Saving new phrase_ from **Wordenlijst**. Congrats!
+Download _Save to Wordenlijst.dmg_ from [releases](https://github.com/aleksandr-vin/wordenlijst/releases) and install 
+(by openning) _Save to Wordenlijst.workflow_ quick action.
+
+Then assign a shortcut to _Save to Wordenlijst_ action in _System Preferences > Keyboard > Shortcuts > Services > Text_
+services.
+
+Now open Safari and go for the unknown: search for new **word**, select it and hit your shortcut, if you did everything
+right, you should see a coq rolling on the Menu Bar and then a notification message _Saving new phrase_ from
+**Wordenlijst**.
+
+Congrats!
