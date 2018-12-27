@@ -19,11 +19,11 @@ import com.xvygyjau.wordenlijst.Encoders._
 
 class WordsService(auth: Auth) extends Http4sDsl[IO] with LazyLogging {
 
-  case class AddPhraseResponse(phrase: Option[String], message: String)
+  case class AddPhraseResponse(phrase: Phrase, message: String)
 
   def updateGist(accessToken: github.AccessToken,
                  gistId: String,
-                 phrase: String): IO[Response[AddPhraseResponse]] = {
+                 phrase: Phrase): IO[Response[AddPhraseResponse]] = {
     val gist = Github(Some(accessToken.value)).gists.getGist(gistId)
     for {
       u1 <- IO.eval(gist.exec[Eval, HttpResponse[String]]())
@@ -34,15 +34,21 @@ class WordsService(auth: Auth) extends Http4sDsl[IO] with LazyLogging {
             s"Github response status: $status, result: $result, headers: $headers")
           logger.debug(s"Github gist: $result")
           val files = Map(
-            "wordenlijst" -> Some(EditGistFile(result.files("wordenlijst").content + phrase + "\n"))
+            "wordenlijst" -> Some(
+              EditGistFile(
+                result.files("wordenlijst").content + phrase.value + "\n"))
           )
-          val updatedGist = Github(Some(accessToken.value)).gists.editGist(gistId, result.description, files)
+          val updatedGist = Github(Some(accessToken.value)).gists
+            .editGist(gistId, result.description, files)
           IO.eval(updatedGist.exec[Eval, HttpResponse[String]]()).flatMap {
             case Right(GHResult(result, status, headers)) =>
               logger.info(s"Updatd Github gist ${result.url}")
               logger.debug(
                 s"Github response status: $status, result: $result, headers: $headers")
-              IO.pure(Right(AddPhraseResponse(Some(phrase), s"New phrase added to gist ${result.url}")))
+              IO.pure(
+                Right(
+                  AddPhraseResponse(phrase,
+                                    s"New phrase added to gist ${result.url}")))
             case Left(e: GHException) =>
               logger.error(s"Github error: ${e.getMessage}")
               IO.pure(Left(FailureResponse(e.getMessage)))
@@ -54,13 +60,27 @@ class WordsService(auth: Auth) extends Http4sDsl[IO] with LazyLogging {
     } yield gistResponse
   }
 
+  case class Phrase(value: String)
+
+  object Phrase {
+    def apply(string: String): Phrase = {
+      new Phrase(string.replaceAll("\n", " "))
+    }
+  }
+
+  implicit val fooDecoder: QueryParamDecoder[Phrase] =
+    QueryParamDecoder[String].map(Phrase.apply)
+
   object PhraseQueryParamMatcher
-      extends OptionalQueryParamDecoderMatcher[String]("phrase")
+      extends OptionalQueryParamDecoderMatcher[Phrase]("phrase")
+
+  implicit val phraseEncoder: Encoder[Phrase] =
+    deriveEncoder
 
   implicit val addPhraseResponseEncoder: Encoder[AddPhraseResponse] =
     deriveEncoder
   implicit val addPhraseResponseEntityEncoder
-  : EntityEncoder[IO, AddPhraseResponse] =
+    : EntityEncoder[IO, AddPhraseResponse] =
     jsonEncoderOf[IO, AddPhraseResponse]
 
   val authedService: AuthedService[Auth.User, IO] = {
@@ -73,7 +93,7 @@ class WordsService(auth: Auth) extends Http4sDsl[IO] with LazyLogging {
             for {
               response <- updateGist(user.accessToken, user.gistId, phrase)
               result <- response match {
-                case Left(r) => Ok(r)
+                case Left(r)  => Ok(r)
                 case Right(r) => Ok(r)
               }
             } yield result
