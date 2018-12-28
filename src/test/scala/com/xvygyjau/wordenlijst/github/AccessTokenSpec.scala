@@ -1,35 +1,35 @@
 package com.xvygyjau.wordenlijst.github
 
 import org.pico.hashids.Hashids
-import org.specs2.mutable.Specification
+import org.scalatest.{FlatSpec, Matchers}
+import com.xvygyjau.wordenlijst.testdata.valid
 
-class AccessTokenSpec extends Specification {
-  "This is a specification for the github.AccessToken module".txt
+class AccessTokenSpec extends FlatSpec with Matchers {
 
-  implicit val hashids: Hashids = Hashids.reference("test")
+  implicit val hashids: Hashids = Hashids.reference(valid.hashidsSalt)
 
-  val at = AccessToken("cb213d0c3c98e33730862234d414c040d1c188df")
+  it should "encode" in {
+    val hash = AccessToken.encode(valid.accessToken)
+    hash shouldNot be(valid.accessToken.value)
+    hash.length shouldNot be > 40
+  }
 
-  "The github.AccessToken should" >> {
-    "encode" >> {
-      val hash = AccessToken.encode(at)
-      hash must not equalTo at.value
-      hash.length must not be greaterThan(40)
-    }
-    "decode" >> {
-      val hash = AccessToken.encode(at)
-      val at2 = AccessToken.decode(hash)
-      at2 must be equalTo at
-    }
-    "safely print" >> {
-      at.toString must be equalTo "cb21********************************88df"
-      AccessToken("12").toString must be equalTo "**"
-      AccessToken("123").toString must be equalTo "***"
-      AccessToken("1234").toString must be equalTo "1**4"
-      AccessToken("12345").toString must be equalTo "1***5"
-    }
-    "require non-empty value" >> {
-      AccessToken("") must throwAn[IllegalArgumentException]
-    }
+  it should "decode" in {
+    val hash = AccessToken.encode(valid.accessToken)
+    val at2 = AccessToken.decode(hash)
+    at2 should be(valid.accessToken)
+  }
+
+  it should "safely print" in {
+    valid.accessToken.toString should be(
+      "cb21********************************88df")
+    AccessToken("12").toString should be("**")
+    AccessToken("123").toString should be("***")
+    AccessToken("1234").toString should be("1**4")
+    AccessToken("12345").toString should be("1***5")
+  }
+
+  it should "require non-empty value" in {
+    an[IllegalArgumentException] should be thrownBy AccessToken("")
   }
 }

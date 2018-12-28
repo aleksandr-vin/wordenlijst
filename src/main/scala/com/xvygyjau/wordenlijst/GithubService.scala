@@ -5,7 +5,7 @@ import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.xvygyjau.wordenlijst.FailureResponse.Response
 import com.xvygyjau.wordenlijst.github.AccessToken
-import github4s.Github
+import github4s.{GHGists, GHUsers, Github}
 import github4s.Github._
 import github4s.GithubResponses.{GHException, GHResult}
 import github4s.free.domain.GistFile
@@ -19,7 +19,9 @@ import org.pico.hashids.Hashids
 import scalaj.http.HttpResponse
 import com.xvygyjau.wordenlijst.Encoders._
 
-class GithubService(implicit hashids: Hashids)
+class GithubService(
+    users: github.AccessToken => GHUsers,
+    gists: github.AccessToken => GHGists)(implicit hashids: Hashids)
     extends Http4sDsl[IO]
     with LazyLogging {
 
@@ -29,11 +31,11 @@ class GithubService(implicit hashids: Hashids)
       accessToken: github.AccessToken,
       privateGist: Option[Boolean],
       gistDescription: Option[String]): IO[Response[TokenResponse]] = {
-    val userRequest = Github(Some(accessToken.value)).users.getAuth
+    val userRequest = users(accessToken).getAuth
     val files = Map(
       "wordenlijst" -> GistFile("+++\n")
     )
-    val newGist = Github(Some(accessToken.value)).gists
+    val newGist = gists(accessToken)
       .newGist(gistDescription.getOrElse("Wordenlijst"),
                public = !privateGist.getOrElse(false),
                files)
