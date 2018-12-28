@@ -15,9 +15,9 @@ import org.http4s.implicits._
 import org.http4s.server.AuthMiddleware
 import org.pico.hashids.Hashids
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.Matchers
 
-class WordsServiceSpec extends FlatSpec with MockFactory with Matchers {
+class WordsServiceSpec extends BaseSpec with MockFactory with Matchers {
 
   {
     lazy val result = savePhrase.as[String].unsafeRunSync()
@@ -27,9 +27,6 @@ class WordsServiceSpec extends FlatSpec with MockFactory with Matchers {
       result should include(s""""value":"${valid.newPhrase}"""")
     }
   }
-
-  class GistOpsTest extends GistOps[GitHub4s]
-  class UserOpsTest extends UserOps[GitHub4s]
 
   private[this] val savePhrase: Response[IO] = {
     implicit val hashids: Hashids = Hashids.reference(valid.hashidsSalt)
