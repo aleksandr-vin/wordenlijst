@@ -2,19 +2,18 @@ package com.xvygyjau.wordenlijst
 
 import cats.effect.IO
 import cats.free.Free
-import github4s.{GHGists, GHUsers}
+import com.xvygyjau.wordenlijst.testdata.valid
 import github4s.GithubResponses.{GHResponse, GHResult}
 import github4s.app.GitHub4s
-import github4s.free.algebra.{GistOps, UserOps}
 import github4s.free.domain.{Gist, GistFile, User}
+import github4s.{GHGists, GHUsers}
 import org.http4s._
 import org.http4s.implicits._
 import org.pico.hashids.Hashids
 import org.scalamock.scalatest.MockFactory
-import com.xvygyjau.wordenlijst.testdata.valid
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.Matchers
 
-class GithubServiceSpec extends FlatSpec with MockFactory with Matchers {
+class GithubServiceSpec extends BaseSpec with MockFactory with Matchers {
 
   {
     lazy val result = retToken.as[String].unsafeRunSync()
@@ -29,9 +28,6 @@ class GithubServiceSpec extends FlatSpec with MockFactory with Matchers {
       result should include(s""""gistId":"${valid.Gist.id}"""")
     }
   }
-
-  class GistOpsTest extends GistOps[GitHub4s]
-  class UserOpsTest extends UserOps[GitHub4s]
 
   private[this] val retToken: Response[IO] = {
     implicit val hashids: Hashids = Hashids.reference(valid.hashidsSalt)
