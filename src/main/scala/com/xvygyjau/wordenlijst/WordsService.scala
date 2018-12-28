@@ -4,7 +4,7 @@ import cats.Eval
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.xvygyjau.wordenlijst.FailureResponse.Response
-import github4s.Github
+import github4s.{GHGists, Github}
 import github4s.Github._
 import github4s.GithubResponses.{GHException, GHResult}
 import github4s.free.domain.EditGistFile
@@ -17,14 +17,17 @@ import org.http4s.{EntityEncoder, HttpService, _}
 import scalaj.http.HttpResponse
 import com.xvygyjau.wordenlijst.Encoders._
 
-class WordsService(auth: Auth) extends Http4sDsl[IO] with LazyLogging {
+class WordsService(auth: Auth, gists: github.AccessToken => GHGists)
+    extends Http4sDsl[IO]
+    with LazyLogging {
 
   case class AddPhraseResponse(phrase: Phrase, message: String)
 
   def updateGist(accessToken: github.AccessToken,
                  gistId: String,
                  phrase: Phrase): IO[Response[AddPhraseResponse]] = {
-    val gist = Github(Some(accessToken.value)).gists.getGist(gistId)
+    val gistsRepo = gists(accessToken)
+    val gist = gistsRepo.getGist(gistId)
     for {
       u1 <- IO.eval(gist.exec[Eval, HttpResponse[String]]())
       gistResponse <- u1 match {
@@ -38,7 +41,7 @@ class WordsService(auth: Auth) extends Http4sDsl[IO] with LazyLogging {
               EditGistFile(
                 result.files("wordenlijst").content + phrase.value + "\n"))
           )
-          val updatedGist = Github(Some(accessToken.value)).gists
+          val updatedGist = gistsRepo
             .editGist(gistId, result.description, files)
           IO.eval(updatedGist.exec[Eval, HttpResponse[String]]()).flatMap {
             case Right(GHResult(result, status, headers)) =>

@@ -7,6 +7,8 @@ package object valid {
   val accessToken = AccessToken("cb213d0c3c98e33730862234d414c040d1c188df")
   val apiKey = "l80M3SMbNPJXow9tQVwl8jRq3FX76MnZNb4"
 
+  val newPhrase = "bebop scale"
+
   object Gist {
     val url = "https://some-gist-url"
     val id = "123456"

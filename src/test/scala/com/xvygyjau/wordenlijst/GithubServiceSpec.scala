@@ -16,15 +16,18 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class GithubServiceSpec extends FlatSpec with MockFactory with Matchers {
 
-  it should "return 200" in {
-    retToken.status should be(Status.Ok)
-  }
+  {
+    lazy val result = retToken.as[String].unsafeRunSync()
 
-  it should "return api key and gist id" in {
-    val result = retToken.as[String].unsafeRunSync()
-    result should include(valid.User.name.get)
-    result should include(s""""apiKey":"${valid.apiKey}"""")
-    result should include(s""""gistId":"${valid.Gist.id}"""")
+    it should "return 200" in {
+      retToken.status should be(Status.Ok)
+    }
+
+    it should "return api key and gist id" in {
+      result should include(valid.User.name.get)
+      result should include(s""""apiKey":"${valid.apiKey}"""")
+      result should include(s""""gistId":"${valid.Gist.id}"""")
+    }
   }
 
   class GistOpsTest extends GistOps[GitHub4s]
@@ -68,14 +71,14 @@ class GithubServiceSpec extends FlatSpec with MockFactory with Matchers {
         response
       }
 
-    val getHW = Request[IO](
+    val getApiKey = Request[IO](
       Method.GET,
       Uri.unsafeFromString(s"/token/${valid.accessToken.value}"))
 
     new GithubService(
       _ => new GHUsers(Some(valid.accessToken.value))(userOps),
       _ => new GHGists(Some(valid.accessToken.value))(gistOps)).service
-      .orNotFound(getHW)
+      .orNotFound(getApiKey)
       .unsafeRunSync()
   }
 }

@@ -23,7 +23,7 @@ object ServerStream {
   def ghGists(accessToken: github.AccessToken) = Github(Some(accessToken.value)).gists
 
   def githubService = new GithubService(ghUsers, ghGists).service
-  def wordsService = new WordsService(auth).service
+  def wordsService = new WordsService(auth, ghGists).service
   def healthService = new HealthService().service
 
   val port = sys.env.getOrElse("PORT", "8080").toInt
