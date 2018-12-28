@@ -2,6 +2,7 @@ package com.xvygyjau.wordenlijst
 
 import cats.effect.IO
 import fs2.StreamApp
+import github4s.Github
 import org.http4s.server.blaze.BlazeBuilder
 
 import scala.concurrent.ExecutionContext
@@ -18,7 +19,10 @@ object ServerStream {
 
   val auth = new CookieAuth()
 
-  def githubService = new GithubService().service
+  def ghUsers(accessToken: github.AccessToken) = Github(Some(accessToken.value)).users
+  def ghGists(accessToken: github.AccessToken) = Github(Some(accessToken.value)).gists
+
+  def githubService = new GithubService(ghUsers, ghGists).service
   def wordsService = new WordsService(auth).service
   def healthService = new HealthService().service
 
