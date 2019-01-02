@@ -7,7 +7,6 @@ import com.xvygyjau.wordenlijst.testdata.valid
 import github4s.GHGists
 import github4s.GithubResponses.{GHResponse, GHResult}
 import github4s.app.GitHub4s
-import github4s.free.algebra.{GistOps, UserOps}
 import github4s.free.domain.{EditGistFile, Gist, GistFile}
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
