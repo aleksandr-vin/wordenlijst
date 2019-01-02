@@ -83,3 +83,21 @@ right, you should see a coq rolling on the Menu Bar and then a notification mess
 **Wordenlijst**.
 
 Congrats!
+
+### iOS
+
+For now it seems like the best way is to use [IFTTT](http://ifttt.com/) app to create an applet that can be used to
+share a selected text from any screen on your device.
+
+Open IFTTT app, choose *My Applets* tab and tap **+** in top right corner. You will start a *New Applet* flow. Tap
+**+ this** and search for *note*, choose *Note widget* from the provided list of results. Choose *Any new note* option.
+Now tap **+ that** and go for *webhooks*, choose *Make a web request* option.
+
+Configuring the webhook is easy: for *URL* you specify `https://GIST_ID:API_KEY@wordenlijst.herokuapp.com/words?phrase=`
+and replace `GIST_ID:API_KEY` with *gistId* and *apiKey* separated with `:` (check _Setup_ section of this doc). At the
+end of the *URL* add `NoteText` by choosing it via **Add Ingredient** button. Method must be set to *POST*. Content Type
+must be *text/plain*. That's it.
+
+Now, for the check, go to Safari, select a word (of phrase), click *Share...* and choose *IFTTT*, then post it.
+
+Congrats once again!
