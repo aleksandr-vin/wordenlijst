@@ -17,7 +17,7 @@ object ServerStream {
 
   import Ids.hashids
 
-  val auth = new CookieAuth()
+  val auth = new CombinedAuth()
 
   def ghUsers(accessToken: github.AccessToken) = Github(Some(accessToken.value)).users
   def ghGists(accessToken: github.AccessToken) = Github(Some(accessToken.value)).gists
