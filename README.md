@@ -7,8 +7,10 @@ _Save words to your Gist easily._
 This service provides an interface to collect *words* in one HTTP call.
 
 It'll support your journey in extending your vocabulary while doing everyday business at your
-computer. You'll be able to save *new words* in one place -- your Github Gist -- with only
+computer or slacking with your phone. You'll be able to save *new words* in one place -- your GitHub Gist -- with only
 a pair of keystrokes.
+
+Check mine gist [here](https://gist.github.com/aleksandr-vin/cbe9defa032013cdf8a043aa7c72e60f).
 
 ## Setup
 
@@ -30,9 +32,9 @@ This will create a new Gist named `wordenlijst` in your Gists, and store api key
 cookie file. You'd see smth. like this in reply:
 
 ```json
-{"apiKey":"2zjAT7ypDBb9...........7S6GMZwV6B2","gistId":"8e7d0f51a7bfa248be9bc35bc82ef282",
+{"apiKey":"2zjAT7ypDBb9...........7S6GMZwV6B2","gistId":"cbe9defa032013cdf8a043aa7c72e60f",
  "message":"Welcome Aleksandr Vinokurov, your api key is 2zjAT7ypDBb9...........7S6GMZwV6B2,\
- and gist is https://api.github.com/gists/8e7d0f51a7bfa248be9bc35bc82ef282"}
+ and gist is https://api.github.com/gists/cbe9defa032013cdf8a043aa7c72e60f"}
 ```
 
 In case of an error, please check:
