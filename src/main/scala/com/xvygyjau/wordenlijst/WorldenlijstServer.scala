@@ -25,6 +25,7 @@ object ServerStream {
   def githubService = new GithubService(ghUsers, ghGists).service
   def wordsService = new WordsService(auth, ghGists).service
   def healthService = new HealthService().service
+  def topService = new TopService().service
 
   val port = sys.env.getOrElse("PORT", "8080").toInt
 
@@ -34,5 +35,6 @@ object ServerStream {
       .mountService(githubService, "/github")
       .mountService(wordsService, "/words")
       .mountService(healthService, "/health")
+    .mountService(topService, prefix = "")
       .serve
 }
